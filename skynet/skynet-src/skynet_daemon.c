@@ -122,5 +122,6 @@ daemon_init(const char *pidfile) {
 
 int
 daemon_exit(const char *pidfile) {
-	return unlink(pidfile);
+	return 
+	(pidfile);
 }
