@@ -58,6 +58,7 @@ clear_list(struct uncomplete * uc) {
 	}
 }
 
+// 清空队列 queue 的内存数据
 static int
 lclear(lua_State *L) {
 	struct queue * q = lua_touserdata(L, 1);
@@ -89,6 +90,7 @@ hash_fd(int fd) {
 	return (int)(((uint32_t)(a + b + c)) % HASHSIZE);
 }
 
+// 从queue 中查找并删除 fd
 static struct uncomplete *
 find_uncomplete(struct queue *q, int fd) {
 	if (q == NULL)
@@ -113,6 +115,9 @@ find_uncomplete(struct queue *q, int fd) {
 	return NULL;
 }
 
+/*
+ * get_queue, 没有就构建
+ */
 static struct queue *
 get_queue(lua_State *L) {
 	struct queue *q = lua_touserdata(L,1);
@@ -130,13 +135,18 @@ get_queue(lua_State *L) {
 	return q;
 }
 
+/*
+ * 扩展一倍的 cap netpack 内存大小
+ */
 static void
 expand_queue(lua_State *L, struct queue *q) {
 	struct queue *nq = lua_newuserdatauv(L, sizeof(struct queue) + q->cap * sizeof(struct netpack), 0);
 	nq->cap = q->cap + QUEUESIZE;
 	nq->head = 0;
 	nq->tail = q->cap;
+    // hash: 复制老的内存数据到新分配的内存
 	memcpy(nq->hash, q->hash, sizeof(nq->hash));
+    // hash: 清掉原来占用的内存
 	memset(q->hash, 0, sizeof(q->hash));
 	int i;
 	for (i=0;i<q->cap;i++) {
@@ -166,6 +176,7 @@ push_data(lua_State *L, int fd, void *buffer, int size, int clone) {
 	}
 }
 
+// hash[h] : uc3->uc2->uc
 static struct uncomplete *
 save_uncomplete(lua_State *L, int fd) {
 	struct queue *q = get_queue(L);
@@ -214,6 +225,7 @@ push_more(lua_State *L, int fd, uint8_t *buffer, int size) {
 	}
 }
 
+// free fd
 static void
 close_uncomplete(lua_State *L, int fd) {
 	struct queue *q = lua_touserdata(L,1);
